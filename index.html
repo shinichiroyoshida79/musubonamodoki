@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>むすぼな AI - 居宅介護支援</title>
+<title>ケアぼな AI - 居宅介護支援</title>
 <style>
 :root {
 --green: #008350; --green-dark: #006840; --green-light: #e8f5ee;
@@ -194,7 +194,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <body>
 <div id="mobileBar">
 <button id="hamburger" onclick="toggleMenu()" aria-label="メニュー">☰</button>
-<span class="mb-title">むすぼな AI</span>
+<span class="mb-title">ケアぼな AI</span>
 </div>
 <div id="menuOverlay" onclick="closeMenu()"></div>
 <nav id="sidebar">
@@ -257,7 +257,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <div class="page active" id="page-home">
 <div class="home-content">
 <div class="home-logo">
-<div class="logo-box"><div class="logo-m">m</div>むすぼな <div class="logo-ai">AI</div></div>
+<div class="logo-box"><div class="logo-m">ケ</div>ケアぼな <div class="logo-ai">AI</div></div>
 </div>
 <div class="home-version">V5.5</div>
 <div class="home-start-hint"><button class="btn-orange">開始</button> をクリックすることで、各ユースケースを体験できます。</div>
@@ -747,7 +747,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>むすぼなAIデータ受け渡しシステム</title>
+<title>ケアぼなAIデータ受け渡しシステム</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">__ENDSCRIPT__
 <script src="https://cdn.jsdelivr.net/npm/encoding-japanese@2.2.0/encoding.min.js">__ENDSCRIPT__
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js">__ENDSCRIPT__
@@ -1081,7 +1081,7 @@ textarea { resize: vertical; }
 <header>
   <div class="logo-box">m</div>
   <div class="header-text">
-    <h1>むすぼなAIデータ受け渡しシステム</h1>
+    <h1>ケアぼなAIデータ受け渡しシステム</h1>
     <p>ケアプランデータ連携 標準様式CSV 生成ツール（202407仕様対応）</p>
   </div>
 </header>
@@ -1171,14 +1171,14 @@ textarea { resize: vertical; }
 <!-- ═══════════════ STEP 2 ═══════════════ -->
 <div id="p2" style="display:none">
 
-  <!-- むすぼなAIリンクバナー -->
+  <!-- ケアぼなAIリンクバナー -->
   <div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:1px solid #a5d6a7;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
     <div style="flex:1;min-width:220px">
       <a href="https://d2jmp4ahjvfvvw.cloudfront.net/use-case-builder/execute/17ad0ce4-dce4-4ab4-bebe-561c20750bb9" target="_blank" rel="noopener noreferrer"
          style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:1.05rem;color:#2e7d32;text-decoration:none;border-bottom:2px solid #66bb6a;padding-bottom:2px">
-        🌿 むすぼなAIケアプラン作成 ↗
+        🌿 ケアぼなAIケアプラン作成 ↗
       </a>
-      <p style="margin:6px 0 0;font-size:0.82rem;color:#555;line-height:1.5">※むすぼなAIで出力したケアプランのCSVデータ（黒い部分）の右上のバインダーマークをクリックしてコピーし、下の枠に貼り付けて取り込んでください。</p>
+      <p style="margin:6px 0 0;font-size:0.82rem;color:#555;line-height:1.5">※ケアぼなAIで出力したケアプランのCSVデータ（黒い部分）の右上のバインダーマークをクリックしてコピーし、下の枠に貼り付けて取り込んでください。</p>
     </div>
   </div>
 
@@ -2639,7 +2639,7 @@ async function generateExcel() {
   }
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'むすぼなAIデータ受け渡しシステム';
+  wb.creator = 'ケアぼなAIデータ受け渡しシステム';
 
   const fmtD  = d => d ? d.replace(/-/g, '/') : '';
   const ptMap = {'11':'初回','12':'紹介','21':'継続','51':'初回＆紹介','52':'初回＆継続','53':'紹介＆継続','54':'初回＆紹介＆継続'};
@@ -4048,4 +4048,4 @@ function applyPastedTranscript(mode){
   if(typeof updateTranscriptionDisplay==='function') updateTranscriptionDisplay();
   showNotification('✅ 文字起こし結果に反映しました');
 }
-const DELIV_PRINT_CSS = "@page{size:A4 portrait;margin:14mm;}*{box-sizing:border-box;}body{font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;color:#000;margin:0;}.doc-sheet{border:none;max-width:none;padding:0;font-size:13px;line-height:1.75;}.doc-sheet h2{font-size:18px;te
+const DELIV_PRINT_CSS = "@page{size:A4 portrait;margin:14mm;}*{box-sizing:border-box;}body{font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;color:#000;margin:0;}.doc-sheet{border:none;max-width:none;padding:0;font-size:13px;line-height:1.75;}.doc-sheet h2{font-size:18px;
