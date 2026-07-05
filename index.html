@@ -218,6 +218,9 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <div class="sidebar-nav-item" id="nav-assessment" onclick="showPage('assessment')">
 <span class="nav-icon">🔍</span> アセスメント
 </div>
+<div class="sidebar-nav-item" id="nav-genogram" onclick="showPage('genogram')">
+<span class="nav-icon">👪</span> ジェノグラム（家族図）
+</div>
 <div class="sidebar-nav-item" id="nav-careplan" onclick="showPage('careplan')">
 <span class="nav-icon">📋</span> ケアプラン作成
 </div>
@@ -326,6 +329,39 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <div id="deliv-out-shoukai" class="deliv-out hidden"></div>
 <div id="deliv-out-renkei" class="deliv-out hidden"></div>
 </div>
+<!-- ジェノグラム -->
+<div class="page" id="page-genogram">
+<div class="page-header">👪 ジェノグラム（家族図）</div>
+<div class="page-body">
+<div class="card">
+<div class="section-label">家族関係がわかる文章（会話記録・アセスメント等）</div>
+<div style="font-size:12px;color:var(--gray-text);margin-bottom:8px;">アセスメントの情報源が自動で入ります。家族について書かれた部分があれば、AIが整理して家族図を描きます。</div>
+<textarea class="source-textarea" id="genoSource" placeholder="例）本人は田中好子さん87歳。夫の哲夫さん89歳と二人暮らし。長男の光男さん62歳は妻と近所に住んでいる。長女は山下姓で他県在住…" style="min-height:120px;"></textarea>
+<div class="action-row">
+<button class="btn-clear" onclick="document.getElementById('genoSource').value=''">クリア</button>
+<button class="btn-run" onclick="genoRun()">👪 家族図を作成</button>
+</div>
+</div>
+<div class="loading-spinner" id="genoLoading"><div class="spinner-ring"></div>家族関係を整理中...<div style="font-size:12px;color:var(--gray-text);font-weight:normal;margin-top:6px;">⏳ 30秒ほどお待ちください。</div></div>
+<div class="card" id="genoResultCard" style="display:none;">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+<div class="section-label" style="margin:0;">家族図</div>
+<div style="flex:1;"></div>
+<button class="btn-sm" onclick="genoDownloadPng()">⬇ 画像で保存</button>
+<button class="btn-sm" onclick="genoPrint()">🖨 印刷／PDF</button>
+</div>
+<div id="genoSvgWrap" style="overflow:auto;background:#fdfcf8;border:1px solid #e3ddd0;border-radius:8px;padding:10px;"></div>
+<div class="section-label" style="margin-top:16px;">メンバーの修正（名前・年齢・印を直して「再描画」）</div>
+<div style="overflow-x:auto;">
+<table id="genoTable" style="width:100%;border-collapse:collapse;font-size:12.5px;"></table>
+</div>
+<div class="action-row" style="margin-top:10px;">
+<button class="btn-run" onclick="genoRedraw()">🔄 再描画</button>
+</div>
+<div style="font-size:11.5px;color:var(--gray-text);margin-top:8px;">※家族構成そのもの（誰の子か等）を直したい場合は、上の文章を修正して「👪 家族図を作成」をもう一度押してください。</div>
+</div>
+</div>
+</div>
 <!-- 設定 -->
 <div class="page" id="page-settings">
 <div class="page-header">⚙ 設定</div>
@@ -421,6 +457,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <div class="file-upload-area" style="flex-wrap:wrap;gap:8px;">
 <button class="btn-file" onclick="document.getElementById('ocrCamera').click()">📷 カメラで撮影</button>
 <button class="btn-file" onclick="document.getElementById('ocrFile').click()">🖼 画像を選択</button>
+<button class="btn-file" onclick="openQrModal()">📱 スマホで開く</button>
 <div class="file-name" id="ocrFileName">選択されていません</div>
 </div>
 <input type="file" id="ocrCamera" accept="image/*" capture="environment" multiple class="hidden" onchange="addOcrFiles(this.files)">
@@ -477,6 +514,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <button class="btn-file" onclick="document.getElementById('assessOcrCamera').click()">📷 写真で撮影</button>
 <button class="btn-file" onclick="document.getElementById('assessOcrFile').click()">🖼 画像を選択</button>
 <button class="btn-file" id="assessMicBtn" onclick="assessToggleMic()">🎙 音声認識で追記</button>
+<button class="btn-file" onclick="openQrModal()">📱 スマホで開く</button>
 </div>
 <div id="assessMicStatus" style="display:none;margin:8px 0;padding:8px 12px;background:#fff3e6;border:1px solid #ffd9ad;border-radius:6px;font-size:12.5px;color:#8a5300;line-height:1.6;"></div>
 <input type="file" id="assessOcrCamera" accept="image/*" capture="environment" multiple class="hidden" onchange="assessAddImages(this.files)">
@@ -709,6 +747,16 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; fon
 <tbody id="presetTableBody"></tbody>
 </table>
 </div>
+</div>
+</div>
+<!-- QRコード（スマホで開く）モーダル -->
+<div class="modal-overlay" id="qrModalOverlay">
+<div class="modal" style="max-width:340px;text-align:center;">
+<div class="modal-title">📱 スマホで開く</div>
+<div style="font-size:13px;color:var(--gray-text);line-height:1.7;margin-bottom:14px;">スマホのカメラでこのQRコードを読み取ると、<br>スマホでケアぼなAIが開きます。<br>スマホなら「📷 写真で撮影」でそのまま撮影できます。</div>
+<img id="qrImg" alt="QRコード" style="width:220px;height:220px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+<div id="qrUrlText" style="font-size:11px;color:var(--gray-text);word-break:break-all;margin-top:10px;"></div>
+<div style="margin-top:14px;"><button class="btn-sm" onclick="closeQrModal()" style="padding:10px 30px;font-size:14px;">閉じる</button></div>
 </div>
 </div>
 <!-- プリセットモーダル -->
@@ -3280,6 +3328,7 @@ careplan: { icon: '📋', label: 'ケアプラン作成' },
 transcribe: { icon: '🎙', label: '音声文字起こし' },
 batch: { icon: '🚀', label: '一括生成' },
 ocr: { icon: '📷', label: 'AI OCR（写真取込）' },
+genogram: { icon: '👪', label: 'ジェノグラム' },
 };
 function formatDateTime(iso) {
 const d = new Date(iso);
@@ -3396,6 +3445,10 @@ document.getElementById('carePlanSourceTextarea').value = assessmentText;
 }
 }
 if (name === 'deliverables') { onOpenDeliverables(); }
+if (name === 'genogram') {
+const gs = document.getElementById('genoSource');
+if (gs && !gs.value) gs.value = (document.getElementById('sourceTextarea').value || transcriptionText || '');
+}
 }
 
 // ===== AI OCR（写真取込・単体ページ） =====
@@ -4146,6 +4199,215 @@ renderPresetTable(); refreshPresetSelects();
 showNotification('削除しました');
 }
 
+// ===== ジェノグラム（家族図） =====
+const GENO_PROMPT = `以下の文章から家族関係を読み取り、次の形式のJSONだけを出力してください（説明文・コードフェンス不要）。
+{"members":[{"id":"m1","name":"氏名（不明なら空文字）","sex":"male|female|unknown","age":"数字のみ（不明なら空文字）","label":"本人・夫・妻・長男・長男の妻・長女・孫 などの続柄","isSelf":false,"keyPerson":false,"deceased":false,"cohabiting":false}],"couples":[["m1","m2"]],"children":[{"parents":["m1","m2"],"child":"m3"}]}
+ルール:
+- 本人（利用者）は必ず1人だけ isSelf:true にする
+- キーパーソンと明記・示唆される人は keyPerson:true
+- 本人と同居している人（本人含む）は cohabiting:true
+- 亡くなっている人は deceased:true
+- couples は夫婦・パートナーの組。children は「parents（夫婦のid）の子が child」
+- 文章に登場する家族だけを載せ、推測で家族を追加しない
+- JSONのみを出力`;
+let __genoData = null;
+async function genoRun() {
+const src = document.getElementById('genoSource').value.trim();
+if (!src) { showNotification('家族について書かれた文章を入力してください'); return; }
+if (!cfWorkerUrl) { showNotification('設定ページでURLを設定してください'); showPage('settings'); return; }
+document.getElementById('genoLoading').classList.add('active');
+document.getElementById('genoResultCard').style.display = 'none';
+try {
+const res = await callClaude([{ role: 'user', content: GENO_PROMPT + '\n\n【文章】\n' + src }], 'claude-sonnet-4-6', 4000);
+let s = String(res).trim().replace(/^```[a-zA-Z]*\n?/, '').replace(/```\s*$/, '').trim();
+const i = s.indexOf('{'), j = s.lastIndexOf('}');
+if (i >= 0 && j > i) s = s.slice(i, j + 1);
+__genoData = JSON.parse(s);
+genoRenderAll();
+saveHistory('genogram', src, s);
+showNotification('✅ 家族図を作成しました');
+} catch (e) {
+showNotification('エラー: ' + e.message);
+} finally {
+document.getElementById('genoLoading').classList.remove('active');
+}
+}
+function genoRenderAll() {
+if (!__genoData) return;
+document.getElementById('genoResultCard').style.display = 'block';
+document.getElementById('genoSvgWrap').innerHTML = genoRenderSVG(__genoData);
+genoBuildTable();
+}
+function genoRenderSVG(data) {
+const S = 56, SLOT = 128, ROWH = 165, M = 50, LBL = 40;
+const members = {}; (data.members || []).forEach(m => members[m.id] = m);
+const couples = (data.couples || []).filter(c => c && members[c[0]] && members[c[1]]);
+const childRel = (data.children || []).filter(r => r && members[r.child]);
+const coupleOf = id => couples.find(c => c.includes(id));
+const self = (data.members || []).find(m => m.isSelf) || (data.members || [])[0];
+if (!self) return '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80"><text x="20" y="45" font-size="14">家族情報が読み取れませんでした</text></svg>';
+const selfCouple = coupleOf(self.id);
+let top = selfCouple ? selfCouple.slice() : [self.id];
+if (top.length === 2 && members[top[0]].sex !== 'male' && members[top[1]].sex === 'male') top = [top[1], top[0]];
+const isTopParents = r => { const ps = r.parents || []; return ps.includes(self.id) || (selfCouple && ps.some(p => selfCouple.includes(p))); };
+const kids = childRel.filter(isTopParents).map(r => r.child);
+const units = kids.map(k => {
+const c = coupleOf(k);
+const persons = [k];
+if (c) { const sp = (c[0] === k) ? c[1] : c[0]; if (!top.includes(sp)) persons.push(sp); }
+const gks = childRel.filter(r => (r.parents || []).includes(k)).map(r => r.child);
+return { persons, gks, w: Math.max(persons.length, gks.length, 1) * SLOT };
+});
+const pos = {}, placed = new Set();
+const rowY = [M + S / 2, M + S / 2 + ROWH, M + S / 2 + ROWH * 2];
+let x = M;
+units.forEach(u => {
+u.x0 = x;
+let px = x + (u.w - u.persons.length * SLOT) / 2 + SLOT / 2;
+u.persons.forEach(pid => { pos[pid] = { x: px, y: rowY[1] }; placed.add(pid); px += SLOT; });
+let gx = x + (u.w - u.gks.length * SLOT) / 2 + SLOT / 2;
+u.gks.forEach(g => { pos[g] = { x: gx, y: rowY[2] }; placed.add(g); gx += SLOT; });
+x += u.w + 36;
+});
+const childSpanW = units.length ? (x - 36 - M) : 0;
+const topW = top.length * SLOT;
+const center = units.length ? (M + childSpanW / 2) : (M + topW / 2);
+let tx = center - topW / 2 + SLOT / 2;
+top.forEach(id => { pos[id] = { x: tx, y: rowY[0] }; placed.add(id); tx += SLOT; });
+let deep = units.length ? (units.some(u => u.gks.length) ? 2 : 1) : 0;
+const un = (data.members || []).filter(m => !placed.has(m.id));
+const exY = M + S / 2 + ROWH * (deep + 1);
+let ex = M + SLOT / 2;
+un.forEach(m => { pos[m.id] = { x: ex, y: exY }; ex += SLOT; });
+if (un.length) deep++;
+let lines = '', shapes = '', labels = '', boxes = '';
+const L = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1b7a4d" stroke-width="2.5"/>`;
+// 夫婦線＋親子線
+let topMid = { mx: pos[top[0]].x, my: pos[top[0]].y };
+if (top.length === 2) { lines += L(pos[top[0]].x, pos[top[0]].y, pos[top[1]].x, pos[top[1]].y); topMid = { mx: (pos[top[0]].x + pos[top[1]].x) / 2, my: pos[top[0]].y }; }
+if (units.length) {
+const busY = rowY[1] - S / 2 - 34;
+lines += L(topMid.mx, topMid.my, topMid.mx, busY);
+const cxs = units.map(u => pos[u.persons[0]].x).concat([topMid.mx]);
+lines += L(Math.min(...cxs), busY, Math.max(...cxs), busY);
+units.forEach(u => { const c = pos[u.persons[0]]; lines += L(c.x, busY, c.x, c.y - S / 2); });
+}
+units.forEach(u => {
+if (u.persons.length === 2) lines += L(pos[u.persons[0]].x, pos[u.persons[0]].y, pos[u.persons[1]].x, pos[u.persons[1]].y);
+if (u.gks.length) {
+const mx = u.persons.length === 2 ? (pos[u.persons[0]].x + pos[u.persons[1]].x) / 2 : pos[u.persons[0]].x;
+const my = u.persons.length === 2 ? pos[u.persons[0]].y : pos[u.persons[0]].y + S / 2;
+const busY2 = rowY[2] - S / 2 - 34;
+lines += L(mx, my, mx, busY2);
+const gxs = u.gks.map(g => pos[g].x).concat([mx]);
+lines += L(Math.min(...gxs), busY2, Math.max(...gxs), busY2);
+u.gks.forEach(g => { lines += L(pos[g].x, busY2, pos[g].x, pos[g].y - S / 2); });
+}
+});
+// 図形＋ラベル
+(data.members || []).forEach(m => {
+const P = pos[m.id]; if (!P) return;
+const h = S / 2, common = 'fill="#fdfcf8" stroke="#1b7a4d" stroke-width="2.5"';
+if (m.sex === 'female') {
+shapes += `<circle cx="${P.x}" cy="${P.y}" r="${h}" ${common}/>`;
+if (m.isSelf) shapes += `<circle cx="${P.x}" cy="${P.y}" r="${h - 6}" fill="none" stroke="#1b7a4d" stroke-width="2"/>`;
+} else if (m.sex === 'male') {
+shapes += `<rect x="${P.x - h}" y="${P.y - h}" width="${S}" height="${S}" ${common}/>`;
+if (m.isSelf) shapes += `<rect x="${P.x - h + 6}" y="${P.y - h + 6}" width="${S - 12}" height="${S - 12}" fill="none" stroke="#1b7a4d" stroke-width="2"/>`;
+} else {
+shapes += `<rect x="${P.x - h}" y="${P.y - h}" width="${S}" height="${S}" rx="16" ${common}/>`;
+if (m.isSelf) shapes += `<rect x="${P.x - h + 6}" y="${P.y - h + 6}" width="${S - 12}" height="${S - 12}" rx="10" fill="none" stroke="#1b7a4d" stroke-width="2"/>`;
+}
+if (m.deceased) shapes += `<line x1="${P.x - h}" y1="${P.y - h}" x2="${P.x + h}" y2="${P.y + h}" stroke="#666" stroke-width="2"/><line x1="${P.x + h}" y1="${P.y - h}" x2="${P.x - h}" y2="${P.y + h}" stroke="#666" stroke-width="2"/>`;
+if (m.keyPerson) shapes += `<text x="${P.x + h - 4}" y="${P.y - h + 8}" font-size="18" fill="#d4880f">★</text>`;
+const age = (m.age !== '' && m.age != null) ? m.age : '?';
+const line2 = (m.label || '') + ' (' + age + ')';
+if (m.name) {
+labels += `<text x="${P.x}" y="${P.y + h + 16}" font-size="12" fill="#333" text-anchor="middle">${escapeHtml(m.name)}</text>`;
+labels += `<text x="${P.x}" y="${P.y + h + 31}" font-size="12" fill="#666" text-anchor="middle">${escapeHtml(line2)}</text>`;
+} else {
+labels += `<text x="${P.x}" y="${P.y + h + 18}" font-size="12.5" fill="#333" text-anchor="middle">${escapeHtml(line2)}</text>`;
+}
+});
+// 同居枠
+const cohab = (data.members || []).filter(m => m.cohabiting && pos[m.id]);
+if (cohab.length) {
+const xs = cohab.map(m => pos[m.id].x), ys = cohab.map(m => pos[m.id].y);
+const x0 = Math.min(...xs) - S / 2 - 26, x1 = Math.max(...xs) + S / 2 + 26;
+const y0 = Math.min(...ys) - S / 2 - 30, y1 = Math.max(...ys) + S / 2 + LBL + 6;
+boxes += `<rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="14" fill="#f5efe2" fill-opacity="0.5" stroke="#c8891a" stroke-width="2" stroke-dasharray="7,5"/>`;
+boxes += `<text x="${x0 + 12}" y="${y0 + 18}" font-size="13" fill="#c8891a">同居</text>`;
+}
+const allX = Object.values(pos).map(p => p.x);
+const W = Math.max(...allX) + SLOT / 2 + M;
+const H = M + S / 2 + ROWH * deep + S / 2 + LBL + M;
+return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif"><rect width="${W}" height="${H}" fill="#fdfcf8"/>${boxes}${lines}${shapes}${labels}</svg>`;
+}
+function genoBuildTable() {
+const t = document.getElementById('genoTable');
+const th = 'padding:6px 8px;border:1px solid #e0dacc;background:#f5f1e8;font-weight:600;white-space:nowrap;';
+const td = 'padding:4px 6px;border:1px solid #e0dacc;text-align:center;';
+let html = `<tr><th style="${th}">続柄</th><th style="${th}">氏名</th><th style="${th}">年齢</th><th style="${th}">性別</th><th style="${th}">本人</th><th style="${th}">キーパーソン★</th><th style="${th}">同居</th><th style="${th}">故人</th></tr>`;
+(__genoData.members || []).forEach((m, i) => {
+html += `<tr>
+<td style="${td}"><input data-g="label" data-i="${i}" value="${escapeHtml(m.label || '')}" style="width:90px;padding:4px;border:1px solid #ddd;border-radius:4px;"></td>
+<td style="${td}"><input data-g="name" data-i="${i}" value="${escapeHtml(m.name || '')}" style="width:110px;padding:4px;border:1px solid #ddd;border-radius:4px;"></td>
+<td style="${td}"><input data-g="age" data-i="${i}" value="${escapeHtml(m.age || '')}" style="width:46px;padding:4px;border:1px solid #ddd;border-radius:4px;"></td>
+<td style="${td}"><select data-g="sex" data-i="${i}" style="padding:4px;border:1px solid #ddd;border-radius:4px;"><option value="male"${m.sex === 'male' ? ' selected' : ''}>男</option><option value="female"${m.sex === 'female' ? ' selected' : ''}>女</option><option value="unknown"${(m.sex !== 'male' && m.sex !== 'female') ? ' selected' : ''}>不明</option></select></td>
+<td style="${td}"><input type="checkbox" data-g="isSelf" data-i="${i}"${m.isSelf ? ' checked' : ''}></td>
+<td style="${td}"><input type="checkbox" data-g="keyPerson" data-i="${i}"${m.keyPerson ? ' checked' : ''}></td>
+<td style="${td}"><input type="checkbox" data-g="cohabiting" data-i="${i}"${m.cohabiting ? ' checked' : ''}></td>
+<td style="${td}"><input type="checkbox" data-g="deceased" data-i="${i}"${m.deceased ? ' checked' : ''}></td>
+</tr>`;
+});
+t.innerHTML = html;
+}
+function genoRedraw() {
+if (!__genoData) return;
+document.querySelectorAll('#genoTable [data-g]').forEach(el => {
+const m = __genoData.members[Number(el.dataset.i)]; if (!m) return;
+const k = el.dataset.g;
+if (el.type === 'checkbox') m[k] = el.checked; else m[k] = el.value.trim();
+});
+document.getElementById('genoSvgWrap').innerHTML = genoRenderSVG(__genoData);
+showNotification('🔄 再描画しました');
+}
+function genoDownloadPng() {
+const svgEl = document.querySelector('#genoSvgWrap svg');
+if (!svgEl) { showNotification('先に家族図を作成してください'); return; }
+const xml = new XMLSerializer().serializeToString(svgEl);
+const img = new Image();
+img.onload = () => {
+const sc = 2, c = document.createElement('canvas');
+c.width = svgEl.viewBox.baseVal.width * sc; c.height = svgEl.viewBox.baseVal.height * sc;
+const g = c.getContext('2d');
+g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+g.scale(sc, sc); g.drawImage(img, 0, 0);
+c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'ジェノグラム.png'; a.click(); URL.revokeObjectURL(a.href); });
+};
+img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+}
+function genoPrint() {
+const svgEl = document.querySelector('#genoSvgWrap svg');
+if (!svgEl) { showNotification('先に家族図を作成してください'); return; }
+const w = window.open('', '_blank', 'width=900,height=700');
+if (!w) { showNotification('ポップアップがブロックされました。許可してください'); return; }
+w.document.open();
+w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>ジェノグラム</title><style>@page{size:A4 landscape;margin:12mm;}body{margin:0;text-align:center;}svg{max-width:100%;height:auto;}</style></head><body>' + svgEl.outerHTML + '</body></html>');
+w.document.close(); w.focus();
+setTimeout(() => { try { w.print(); } catch (e) {} }, 350);
+}
+
+// ===== QRコード（スマホで開く） =====
+const APP_PUBLIC_URL = 'https://shinichiroyoshida79.github.io/musubonamodoki/';
+function openQrModal() {
+const url = location.protocol.indexOf('http') === 0 ? location.href.split('#')[0].split('?')[0] : APP_PUBLIC_URL;
+document.getElementById('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(url);
+document.getElementById('qrUrlText').textContent = url;
+document.getElementById('qrModalOverlay').classList.add('open');
+}
+function closeQrModal() { document.getElementById('qrModalOverlay').classList.remove('open'); }
+
 // ===== ユーティリティ =====
 function showNotification(msg) {
 const el = document.getElementById('notification');
@@ -4163,6 +4425,7 @@ refreshPresetSelects();
 renderHistoryList('');
 document.getElementById('builderToggle').addEventListener('click', function() { this.classList.toggle('on'); });
 document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('qrModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeQrModal(); });
 document.getElementById('historyModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeHistoryModal(); });
 });
 </script>
